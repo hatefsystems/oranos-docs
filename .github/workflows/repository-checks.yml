@@ -1,0 +1,31 @@
+name: Repository checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Validate Bash syntax
+        run: |
+          bash -n scripts/bootstrap-android.sh
+          bash -n scripts/build-android.sh
+      - name: Validate required English documentation
+        run: |
+          set -eu
+          for file in README.md CONTRIBUTING.md \
+              docs/architecture.md docs/development.md \
+              docs/upstream.md docs/security.md docs/roadmap.md \
+              docs/decisions/0001-source-strategy.md \
+              config/chromium-revision.env; do
+            test -s "$file" || { echo "Missing or empty: $file"; exit 1; }
+          done
+          grep -q 'Chromium' README.md
+          grep -q '^CHROMIUM_REVISION=' config/chromium-revision.env
