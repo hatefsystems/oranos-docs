@@ -1,6 +1,6 @@
 # ADR-0001: Track Chromium Upstream Using an Integration Repository
 
-**Status:** Accepted for initial bootstrap
+**Status:** Superseded by [ADR-0002](0002-native-chromium-fork.md) after creation of the GitHub-native fork
 
 **Date:** 2026-10-26
 

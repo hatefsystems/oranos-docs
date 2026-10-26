@@ -1,58 +1,49 @@
 # Chromium Upstream Tracking and Upgrade Policy
 
-## What this repository is
+## Repository roles: current state
 
-`hatefsystems/oranos` is currently an **upstream-tracked integration and documentation repository**, not a GitHub-native fork of `chromium/chromium`. No Chromium source or history has been copied here. GitHub's **Sync fork** control is not available unless GitHub recognizes an actual fork relationship.
+The active repository split is:
 
-Use the official Chromium checkout workflow for the source and dependencies. Maintain independent, reviewable Oranos patches in this repository.
+- **Browser source fork:** https://github.com/hatefsystems/oranos, a genuine GitHub fork of `chromium/chromium` with upstream tracking on `main`.
+- **Documentation and integration:** https://github.com/hatefsystems/oranos-docs, the repository containing this file, source pin configuration, development scripts, and optional patch exports.
 
-## Creating a genuine GitHub fork
+The actual fork has already been created. **Do not create `oranos-chromium` or re-run a fork command.**
 
-**Important:** This existing `hatefsystems/oranos` repository was created independently, so it does **not** have GitHub's native fork relationship to Chromium. Fetching or cloning Chromium into a workspace does not change that relationship. GitHub does not offer a normal in-place "convert this independent repository to a fork" operation.
+## Synchronize the native GitHub fork
 
-For a genuine GitHub fork, create a **separate** repository within Hatef Systems:
-
-### GitHub web interface
-
-1. Visit https://github.com/chromium/chromium.
-2. Select **Fork**.
-3. Set **Owner** to `hatefsystems`.
-4. Set a repository name that is not taken, such as `oranos-chromium` (the name `oranos` is already occupied).
-5. If appropriate, check **Copy the main branch only**. This copies the current default development branch, **not** a reviewed stable release.
-6. Select **Create fork**. GitHub will record the upstream relationship.
-
-### GitHub CLI alternative
-
-Authenticate GitHub CLI first using `gh auth login`. From outside an unrelated local Git repository:
+From a terminal authenticated with GitHub CLI:
 
 ```bash
-gh repo fork chromium/chromium \
-  --org hatefsystems \
-  --fork-name oranos-chromium \
-  --clone=false
+gh repo sync hatefsystems/oranos --branch main
 ```
 
-Do not run this when a repository with that name already exists. The fork will appear at `https://github.com/hatefsystems/oranos-chromium` **only after creation succeeds**.
+Or open https://github.com/hatefsystems/oranos and choose **Sync fork -> Update branch** on `main`.
 
-### Synchronize the actual fork
+This updates the development-trunk mirror, **not** any downstream Oranos release branch and **not** the Chromium `DEPS` dependencies. Do not use `--force` to overwrite product commits. Keep downstream modifications separate from the fork's `main`.
 
-On GitHub, visit the actual fork, select its default branch, then choose **Sync fork -> Update branch**. Alternatively:
+## Local Chromium checkout connected to the Oranos fork
 
 ```bash
-gh repo sync hatefsystems/oranos-chromium --branch main
+# After installing depot_tools and running 'fetch --nohooks android':
+cd "$HOME/oranos-workspace/src"
+git remote -v
+git remote add oranos https://github.com/hatefsystems/oranos.git
+git fetch origin --tags
 ```
 
-This synchronizes the fork's `main` branch with Chromium's upstream `main` branch. It **does not** automatically adopt a stable release, update your Oranos product branch, or synchronize the Chromium `DEPS` dependencies. Do not use `--force` to discard downstream commits. Keep product-specific work on separate branches based on reviewed upstream releases.
+If an `oranos` remote already exists, review it instead of adding a duplicate. Select a **real stable release tag** after review, then create a local branch based on that tag:
 
-### Which repository should contain Oranos documentation?
+```bash
+git switch -c oranos/upgrade-<reviewed-version> <reviewed-version-tag>
+gclient sync --with_branch_heads --with_tags
+```
 
-For now, keep `hatefsystems/oranos` as the Oranos integration, documentation, and downstream patch repository. Optionally create `hatefsystems/oranos-chromium` as a GitHub-native upstream fork later. These repositories have different purposes and should not be confused.
-
-If the goal is to use the exact name `hatefsystems/oranos` for the native fork, the existing independent repository must first be renamed or otherwise relocated, with its documentation retained. The native fork must then be created under the available name. **Do not delete the existing repository as a shortcut.**
+Angle-bracketed placeholders must be replaced by actual values before executing the command. Build/test the release and push only approved Oranos branches to the fork. Keep `main` synchronized with upstream without committing product changes there.
 
 Official references:
-- https://docs.github.com/en/pull-requests/how-tos/work-with-forks/fork-a-repo
-- https://cli.github.com/manual/gh_repo_fork
+- https://docs.github.com/en/pull-requests/how-tos/work-with-forks/syncing-a-fork
+- https://www.chromium.org/developers/how-tos/get-the-code/working-with-release-branches/
+- https://chromium.googlesource.com/chromium/src/+/main/docs/android_build_instructions.md
 
 ## Stable source pinning
 
@@ -63,7 +54,7 @@ Never use an unreviewed `main` checkout as a production release simply because i
 ## Checkout lifecycle
 
 ```text
-Oranos integration repository
+Oranos documentation and source pin
       |
       | release ref + patch series
       v
@@ -102,9 +93,7 @@ Do not blindly reapply patches that are already present. If no patches exist, bu
 
 ## Git remotes for source checkout
 
-The official `fetch android` command normally creates an `origin` pointing to Chromium's canonical Git host. Keep that source remote separate from this small Oranos integration repository; do **not** push the unrelated full Chromium history into `hatefsystems/oranos`.
-
-A possible later migration to a full GitHub-native fork is a distinct repository-management decision and may require a new fork rather than converting this existing repository in place.
+The official `fetch android` command normally creates an `origin` pointing to Chromium's canonical Git host. Add a separate `oranos` remote pointing to the GitHub-native fork at `hatefsystems/oranos`. Push downstream branches to the Oranos fork after review, never rewriting its upstream-tracking `main` branch. Keep standalone architecture documents, configuration, and optional patch exports in `hatefsystems/oranos-docs`.
 
 ## Release policy
 
