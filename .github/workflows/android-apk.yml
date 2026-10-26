@@ -54,7 +54,7 @@ jobs:
       contents: read
     env:
       SOURCE_BRANCH: ${{ inputs.source_branch }}
-      ORANOS_WORKSPACE: ${{ runner.temp }}/oranos-workspace
+      ORANOS_WORKSPACE: ${{ github.workspace }}/oranos-workspace
     steps:
       - name: Checkout CI integration scripts (not the huge Chromium fork)
         uses: actions/checkout@v4
