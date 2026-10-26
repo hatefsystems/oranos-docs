@@ -1,0 +1,101 @@
+name: Android APK (GitHub-hosted)
+
+# The lightweight validation job runs when these CI files change.
+# A Chromium APK build runs only after an explicit manual dispatch.
+on:
+  push:
+    branches: [master]
+    paths:
+      - .github/workflows/android-apk.yml
+      - scripts/ci-android/build.sh
+      - docs/android-ci.md
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: "Branch in hatefsystems/oranos to build (main builds upstream Chromium)"
+        required: true
+        default: main
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oranos-android-apk-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate Android CI
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Bash syntax and documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n scripts/ci-android/build.sh
+          test -s docs/android-ci.md
+          grep -Fq 'chrome_public_apk' scripts/ci-android/build.sh
+          grep -Fq 'ubuntu-latest-8-cores' .github/workflows/android-apk.yml
+          echo "Android CI file validation passed."
+
+  build:
+    name: Build Chromium Android ARM64 APK
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    needs: validate
+    # A GitHub-hosted LARGER runner must first be provisioned and assigned to
+    # this repository. Configure its exact label in repository variable
+    # ORANOS_ANDROID_RUNNER; the fallback is only a suggested label.
+    runs-on: ${{ vars.ORANOS_ANDROID_RUNNER || 'ubuntu-latest-8-cores' }}
+    timeout-minutes: 360
+    permissions:
+      contents: read
+    env:
+      SOURCE_BRANCH: ${{ inputs.source_branch }}
+      ORANOS_WORKSPACE: ${{ runner.temp }}/oranos-workspace
+    steps:
+      - name: Checkout CI integration scripts (not the huge Chromium fork)
+        uses: actions/checkout@v4
+
+      - name: Verify GitHub-hosted build resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Runner: $RUNNER_NAME ($RUNNER_OS / $RUNNER_ARCH)"
+          df -h "$RUNNER_TEMP"
+          free -h
+          available_gib="$(df -Pk "$RUNNER_TEMP" | awk 'NR == 2 {print int($4 / 1024 / 1024)}')"
+          if (( available_gib < 100 )); then
+            echo "::error::Chromium Android requires at least 100 GiB free. Available: ${available_gib} GiB. Configure a GitHub-hosted larger runner with >= 150 GB SSD."
+            exit 1
+          fi
+
+      - name: Download and build Chromium source from Oranos fork
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/ci-android/build.sh "$ORANOS_WORKSPACE" "$SOURCE_BRANCH"
+
+      - name: Upload development APK, checksums, and source provenance
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chromium-android-arm64-${{ github.run_number }}
+          path: ${{ env.ORANOS_WORKSPACE }}/artifacts/
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Job summary
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "## Chromium Android APK"
+            echo ""
+            echo "Built source branch: \`$SOURCE_BRANCH\`"
+            echo ""
+            echo "This is an upstream/Oranos-fork **development APK**, not a branded or release-signed Oranos distribution."
+            echo "Download the APK, source provenance, and SHA256SUMS from this run's **Artifacts** section."
+          } >> "$GITHUB_STEP_SUMMARY"
