@@ -9,7 +9,7 @@ The Android APK workflow and build script have moved **from this documentation r
 
 The Oranos source repository uses `main` for the product and `chromium-upstream` for a clean Chromium mirror. Do not synchronize GitHub's upstream `main` directly over the product branch.
 
-The workflow uses the standard GitHub-hosted `ubuntu-24.04` runner. GitHub standard runners have around 14 GB of SSD; Chromium requires at least 100 GB free for an Android build. A runner capacity check deliberately fails before the large source download when disk space is inadequate. This validates the practical limit without exhausting the runner.
+The workflow uses the standard GitHub-hosted `ubuntu-24.04` runner. GitHub's published standard-runner table lists 14 GB SSD, but an actual Oranos workflow run on 2026-10-27 reported a 145 GB root filesystem with approximately 87 GB initially free. Removing unrelated preinstalled SDKs raised free disk to approximately 110 GB, passing the Chromium Android 100 GB capacity preflight. These observed values are not contractual guarantees for future runners. The workflow still checks free disk and fails early if insufficient; complete Chromium APK compilation has not yet been demonstrated.
 
 GitHub Actions may need manual activation for a new fork. Once enabled, the `workflow_dispatch` trigger allows launching the CI manually from the Oranos repository Actions tab.
 
