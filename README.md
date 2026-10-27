@@ -20,7 +20,7 @@ These capabilities describe a roadmap, not functionality already implemented.
 
 ## Repository layout and Chromium source strategy
 
-- **[hatefsystems/oranos](https://github.com/hatefsystems/oranos):** GitHub-native fork of [chromium/chromium](https://github.com/chromium/chromium). Its `main` branch tracks upstream and must not carry Oranos-only product modifications.
+- **[hatefsystems/oranos](https://github.com/hatefsystems/oranos):** GitHub-native fork of [chromium/chromium](https://github.com/chromium/chromium). Its `main` branch is the Oranos product integration branch, and its `chromium-upstream` branch tracks unmodified Chromium upstream.
 - **[hatefsystems/oranos-docs](https://github.com/hatefsystems/oranos-docs):** Architecture, development guides, release policy, integration scripts, and optional reviewed downstream patch exports.
 
 This repository is **the documentation repository**, not a Chromium source mirror. The native fork is already established under `hatefsystems/oranos`. Chromium must still be fetched for local Android builds using its official `depot_tools` workflow, because Chromium depends on a separately pinned `DEPS` graph.
@@ -30,7 +30,7 @@ This repository is **the documentation repository**, not a Chromium source mirro
 - Oranos fork: https://github.com/hatefsystems/oranos
 - Android build instructions: https://chromium.googlesource.com/chromium/src/+/main/docs/android_build_instructions.md
 
-Use an independently reviewed **stable Chromium release tag/SHA** for product builds. GitHub's **Sync fork** updates the fork's upstream `main`; it does not update the release-specific Oranos branch or synchronize `DEPS`.
+Use an independently reviewed **stable Chromium release tag/SHA** for product builds. Do **not** use `gh repo sync` on the product `main` branch. Instead, sync `chromium-upstream` safely, then integrate reviewed stable Chromium revisions into Oranos through tested branches. `gclient sync` is still required for `DEPS`.
 
 ## Documentation
 
@@ -38,11 +38,13 @@ Use an independently reviewed **stable Chromium release tag/SHA** for product bu
 | --- | --- |
 | [Architecture](docs/architecture.md) | Modules, platform boundaries, and trust strategy |
 | [Development](docs/development.md) | Android checkout, build, and local development |
+| [Android CI](docs/android-ci.md) | Workflow in the Oranos source fork on GitHub-hosted Ubuntu |
 | [Upstream maintenance](docs/upstream.md) | Version pinning, patch application, and upgrades |
 | [Security](docs/security.md) | Browser, certificate, sync, and release security requirements |
 | [Roadmap](docs/roadmap.md) | Staged delivery and acceptance criteria |
 | [ADR-0001](docs/decisions/0001-source-strategy.md) | Original bootstrap decision, superseded by ADR-0002 |
-| [ADR-0002](docs/decisions/0002-native-chromium-fork.md) | Current GitHub-native fork and documentation split |
+| [ADR-0002](docs/decisions/0002-native-chromium-fork.md) | Native fork decision, updated by ADR-0003 |
+| [ADR-0003](docs/decisions/0003-upstream-mirror-and-product-main.md) | Current Chromium mirror and product main branch policy |
 | [Contributing](CONTRIBUTING.md) | Workflow and documentation conventions |
 
 ## Initial checkout

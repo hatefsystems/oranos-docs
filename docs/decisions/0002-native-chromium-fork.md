@@ -1,6 +1,6 @@
 # ADR-0002: Separate Native Chromium Fork from Oranos Documentation
 
-**Status:** Accepted
+**Status:** Superseded in branch policy by [ADR-0003](0003-upstream-mirror-and-product-main.md)
 
 **Date:** 2026-10-26
 

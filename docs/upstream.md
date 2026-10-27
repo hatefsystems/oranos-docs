@@ -4,22 +4,29 @@
 
 The active repository split is:
 
-- **Browser source fork:** https://github.com/hatefsystems/oranos, a genuine GitHub fork of `chromium/chromium` with upstream tracking on `main`.
+- **Browser source fork:** https://github.com/hatefsystems/oranos, a genuine GitHub fork of `chromium/chromium` with product commits and CI/CD on `main`; the clean Chromium mirror is `chromium-upstream`.
 - **Documentation and integration:** https://github.com/hatefsystems/oranos-docs, the repository containing this file, source pin configuration, development scripts, and optional patch exports.
 
 The actual fork has already been created. **Do not create `oranos-chromium` or re-run a fork command.**
 
-## Synchronize the native GitHub fork
+## Mirror upstream without touching the Oranos product branch
 
-From a terminal authenticated with GitHub CLI:
+- `chromium-upstream` tracks unmodified `chromium/chromium:main`.
+- `main` is the **Oranos product branch**; all PRs, browser CI/CD and product commits belong here.
+- **Do not run `gh repo sync hatefsystems/oranos --branch main`**. That command targets the product branch, not the mirror.
+- Use an explicit stable Chromium tag/commit to upgrade the product; don't blindly merge upstream development trunk into a release.
+
+Update the mirror from a local Git repository with remotes `origin=https://github.com/hatefsystems/oranos.git` and `upstream=https://github.com/chromium/chromium.git`:
 
 ```bash
-gh repo sync hatefsystems/oranos --branch main
+git fetch upstream main
+git fetch origin chromium-upstream
+git push origin refs/remotes/upstream/main:refs/heads/chromium-upstream
 ```
 
-Or open https://github.com/hatefsystems/oranos and choose **Sync fork -> Update branch** on `main`.
+The push should fast-forward. If it is rejected, inspect branch divergence and stop; do **not** force push. The mirror update never writes to `main`.
 
-This updates the development-trunk mirror, **not** any downstream Oranos release branch and **not** the Chromium `DEPS` dependencies. Do not use `--force` to overwrite product commits. Keep downstream modifications separate from the fork's `main`.
+The `oranos` repository owns its own workflow at `.github/workflows/android-apk.yml`. Its CI runs on standard GitHub-hosted Ubuntu runners; due to Chromium's >100 GB disk requirement and standard runner disk limits, full APK builds currently stop at resource preflight unless adequate GitHub-hosted capacity becomes available.
 
 ## Local Chromium checkout connected to the Oranos fork
 
@@ -93,7 +100,7 @@ Do not blindly reapply patches that are already present. If no patches exist, bu
 
 ## Git remotes for source checkout
 
-The official `fetch android` command normally creates an `origin` pointing to Chromium's canonical Git host. Add a separate `oranos` remote pointing to the GitHub-native fork at `hatefsystems/oranos`. Push downstream branches to the Oranos fork after review, never rewriting its upstream-tracking `main` branch. Keep standalone architecture documents, configuration, and optional patch exports in `hatefsystems/oranos-docs`.
+The official `fetch android` command normally creates an `origin` pointing to Chromium's canonical Git host. Add a separate `oranos` remote pointing to the GitHub-native fork at `hatefsystems/oranos`. Push downstream branches and product changes to `main` through reviewed pull requests. Preserve the clean `chromium-upstream` mirror; never mix Oranos product commits into it. Keep standalone architecture documents, configuration, and optional patch exports in `hatefsystems/oranos-docs`.
 
 ## Release policy
 
